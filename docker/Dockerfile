@@ -12,7 +12,7 @@ ARG DEV_WORK_DIR=/workspaces
 FROM ${BASE_IMAGE}
 
 # Grab gosu for switching users.
-COPY --from=tianon/gosu /usr/local/bin/gosu /usr/local/bin/gosu
+# COPY --from=tianon/gosu /usr/local/bin/gosu /usr/local/bin/gosu
 
 USER root
 
