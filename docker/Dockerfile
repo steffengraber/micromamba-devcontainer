@@ -5,8 +5,7 @@
 # For more info, about micromamba, see:
 # <https://github.com/mamba-org/micromamba-docker>.
 
-ARG BASE_IMAGE=mambaorg/micromamba:2-ubuntu24.04
-
+ARG BASE_IMAGE=mambaorg/micromamba:ubuntu22.04
 # The folder to use as a workspace. The project should be mounted here.
 ARG DEV_WORK_DIR=/workspaces
 
@@ -19,7 +18,8 @@ USER root
 
 ENV USERNAME=mambauser
 COPY vendored/features/src/common-utils/main-patched.sh /tmp/
-RUN bash /tmp/main-patched.sh true mambauser && rm /tmp/main-patched.sh
+RUN  /usr/bin/bash /tmp/main-patched.sh true mambauser 
+RUN rm /tmp/main-patched.sh
 
 # Install some useful OS packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends --reinstall \
@@ -31,7 +31,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-ins
     #
     # tab autocompletion for bash
     bash-completion \
-    #
     # monitor output of repeated command
     watch \
     #
@@ -64,7 +63,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-ins
     && rm -rf /var/lib/apt/lists/*
 
 COPY vendored/features/docker-in-docker/install.sh /tmp/install.sh
-RUN DOCKERDASHCOMPOSEVERSION=v2 bash /tmp/install.sh && rm /tmp/install.sh
+RUN DOCKERDASHCOMPOSEVERSION=v2 /usr/bin/bash /tmp/install.sh && rm /tmp/install.sh
 
 # Make sure everyone can access the working directory.
 ARG DEV_WORK_DIR

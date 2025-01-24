@@ -432,102 +432,102 @@ for rc_file in "${possible_rc_files[@]}"; do
     fi
 done
 
-# Add RC snippet and custom bash prompt
-if [ "${RC_SNIPPET_ALREADY_ADDED}" != "true" ]; then
-    case "${ADJUSTED_ID}" in
-        "debian")
-            global_rc_path="/etc/bash.bashrc"
-            ;;
-        "rhel")
-            global_rc_path="/etc/bashrc"
-            ;;
-        "alpine")
-            global_rc_path="/etc/bash/bashrc"
-            # /etc/bash/bashrc does not exist in alpine 3.14 & 3.15
-            mkdir -p /etc/bash
-            ;;
-    esac
-    cat "${FEATURE_DIR}/scripts/rc_snippet.sh" >> ${global_rc_path}
-    cat "${FEATURE_DIR}/scripts/bash_theme_snippet.sh" >> "${user_home}/.bashrc"
-    if [ "${USERNAME}" != "root" ]; then
-        cat "${FEATURE_DIR}/scripts/bash_theme_snippet.sh" >> "/root/.bashrc"
-        chown ${USERNAME}:${group_name} "${user_home}/.bashrc"
-    fi
-    RC_SNIPPET_ALREADY_ADDED="true"
-fi
+# # Add RC snippet and custom bash prompt
+# if [ "${RC_SNIPPET_ALREADY_ADDED}" != "true" ]; then
+#     case "${ADJUSTED_ID}" in
+#         "debian")
+#             global_rc_path="/etc/bash.bashrc"
+#             ;;
+#         "rhel")
+#             global_rc_path="/etc/bashrc"
+#             ;;
+#         "alpine")
+#             global_rc_path="/etc/bash/bashrc"
+#             # /etc/bash/bashrc does not exist in alpine 3.14 & 3.15
+#             mkdir -p /etc/bash
+#             ;;
+#     esac
+#     # cat "${FEATURE_DIR}/scripts/rc_snippet.sh" >> ${global_rc_path}
+#     cat "${FEATURE_DIR}/scripts/bash_theme_snippet.sh" >> "${user_home}/.bashrc"
+#     if [ "${USERNAME}" != "root" ]; then
+#         cat "${FEATURE_DIR}/scripts/bash_theme_snippet.sh" >> "/root/.bashrc"
+#         chown ${USERNAME}:${group_name} "${user_home}/.bashrc"
+#     fi
+#     RC_SNIPPET_ALREADY_ADDED="true"
+# fi
 
-# Optionally configure zsh and Oh My Zsh!
-if [ "${INSTALL_ZSH}" = "true" ]; then
-   if [ ! -f "${user_home}/.zprofile" ]; then
-        touch "${user_home}/.zprofile"
-        echo 'source $HOME/.profile' >> "${user_home}/.zprofile" # TODO: Reconsider adding '.profile' to '.zprofile'
-        chown ${USERNAME}:${group_name} "${user_home}/.zprofile"
-    fi
+# # Optionally configure zsh and Oh My Zsh!
+# if [ "${INSTALL_ZSH}" = "true" ]; then
+#    if [ ! -f "${user_home}/.zprofile" ]; then
+#         touch "${user_home}/.zprofile"
+#         echo 'source $HOME/.profile' >> "${user_home}/.zprofile" # TODO: Reconsider adding '.profile' to '.zprofile'
+#         chown ${USERNAME}:${group_name} "${user_home}/.zprofile"
+#     fi
 
-    if [ "${ZSH_ALREADY_INSTALLED}" != "true" ]; then
-        if [ "${ADJUSTED_ID}" = "rhel" ]; then
-             global_rc_path="/etc/zshrc"
-        else
-            global_rc_path="/etc/zsh/zshrc"
-        fi
-        cat "${FEATURE_DIR}/scripts/rc_snippet.sh" >> ${global_rc_path}
-        ZSH_ALREADY_INSTALLED="true"
-    fi
+#     if [ "${ZSH_ALREADY_INSTALLED}" != "true" ]; then
+#         if [ "${ADJUSTED_ID}" = "rhel" ]; then
+#              global_rc_path="/etc/zshrc"
+#         else
+#             global_rc_path="/etc/zsh/zshrc"
+#         fi
+#         cat "${FEATURE_DIR}/scripts/rc_snippet.sh" >> ${global_rc_path}
+#         ZSH_ALREADY_INSTALLED="true"
+#     fi
 
-    if [ "${CONFIGURE_ZSH_AS_DEFAULT_SHELL}" == "true" ]; then
-        # Fixing chsh always asking for a password on alpine linux
-        # ref: https://askubuntu.com/questions/812420/chsh-always-asking-a-password-and-get-pam-authentication-failure.
-        if [ ! -f "/etc/pam.d/chsh" ] || ! grep -Eq '^auth(.*)pam_rootok\.so$' /etc/pam.d/chsh; then
-            echo "auth sufficient pam_rootok.so" >> /etc/pam.d/chsh
-        elif [[ -n "$(awk '/^auth(.*)pam_rootok\.so$/ && !/^auth[[:blank:]]+sufficient[[:blank:]]+pam_rootok\.so$/' /etc/pam.d/chsh)" ]]; then
-            awk '/^auth(.*)pam_rootok\.so$/ { $2 = "sufficient" } { print }' /etc/pam.d/chsh > /tmp/chsh.tmp && mv /tmp/chsh.tmp /etc/pam.d/chsh
-        fi
+#     if [ "${CONFIGURE_ZSH_AS_DEFAULT_SHELL}" == "true" ]; then
+#         # Fixing chsh always asking for a password on alpine linux
+#         # ref: https://askubuntu.com/questions/812420/chsh-always-asking-a-password-and-get-pam-authentication-failure.
+#         if [ ! -f "/etc/pam.d/chsh" ] || ! grep -Eq '^auth(.*)pam_rootok\.so$' /etc/pam.d/chsh; then
+#             echo "auth sufficient pam_rootok.so" >> /etc/pam.d/chsh
+#         elif [[ -n "$(awk '/^auth(.*)pam_rootok\.so$/ && !/^auth[[:blank:]]+sufficient[[:blank:]]+pam_rootok\.so$/' /etc/pam.d/chsh)" ]]; then
+#             awk '/^auth(.*)pam_rootok\.so$/ { $2 = "sufficient" } { print }' /etc/pam.d/chsh > /tmp/chsh.tmp && mv /tmp/chsh.tmp /etc/pam.d/chsh
+#         fi
 
-        chsh --shell /bin/zsh ${USERNAME}
-    fi
+#         chsh --shell /bin/zsh ${USERNAME}
+#     fi
 
-    # Adapted, simplified inline Oh My Zsh! install steps that adds, defaults to a codespaces theme.
-    # See https://github.com/ohmyzsh/ohmyzsh/blob/master/tools/install.sh for official script.
-    if [ "${INSTALL_OH_MY_ZSH}" = "true" ]; then
-        user_rc_file="${user_home}/.zshrc"
-        oh_my_install_dir="${user_home}/.oh-my-zsh"
-        template_path="${oh_my_install_dir}/templates/zshrc.zsh-template"
-        if [ ! -d "${oh_my_install_dir}" ]; then
-            umask g-w,o-w
-            mkdir -p ${oh_my_install_dir}
-            git clone --depth=1 \
-                -c core.eol=lf \
-                -c core.autocrlf=false \
-                -c fsck.zeroPaddedFilemode=ignore \
-                -c fetch.fsck.zeroPaddedFilemode=ignore \
-                -c receive.fsck.zeroPaddedFilemode=ignore \
-                "https://github.com/ohmyzsh/ohmyzsh" "${oh_my_install_dir}" 2>&1
+#     # Adapted, simplified inline Oh My Zsh! install steps that adds, defaults to a codespaces theme.
+#     # See https://github.com/ohmyzsh/ohmyzsh/blob/master/tools/install.sh for official script.
+#     if [ "${INSTALL_OH_MY_ZSH}" = "true" ]; then
+#         user_rc_file="${user_home}/.zshrc"
+#         oh_my_install_dir="${user_home}/.oh-my-zsh"
+#         template_path="${oh_my_install_dir}/templates/zshrc.zsh-template"
+#         if [ ! -d "${oh_my_install_dir}" ]; then
+#             umask g-w,o-w
+#             mkdir -p ${oh_my_install_dir}
+#             git clone --depth=1 \
+#                 -c core.eol=lf \
+#                 -c core.autocrlf=false \
+#                 -c fsck.zeroPaddedFilemode=ignore \
+#                 -c fetch.fsck.zeroPaddedFilemode=ignore \
+#                 -c receive.fsck.zeroPaddedFilemode=ignore \
+#                 "https://github.com/ohmyzsh/ohmyzsh" "${oh_my_install_dir}" 2>&1
 
-            # Shrink git while still enabling updates
-            cd "${oh_my_install_dir}"
-            git repack -a -d -f --depth=1 --window=1
-        fi
+#             # Shrink git while still enabling updates
+#             cd "${oh_my_install_dir}"
+#             git repack -a -d -f --depth=1 --window=1
+#         fi
 
-        # Add Dev Containers theme
-        mkdir -p ${oh_my_install_dir}/custom/themes
-        cp -f "${FEATURE_DIR}/scripts/devcontainers.zsh-theme" "${oh_my_install_dir}/custom/themes/devcontainers.zsh-theme"
-        ln -sf "${oh_my_install_dir}/custom/themes/devcontainers.zsh-theme" "${oh_my_install_dir}/custom/themes/codespaces.zsh-theme"
+#         # Add Dev Containers theme
+#         mkdir -p ${oh_my_install_dir}/custom/themes
+#         cp -f "${FEATURE_DIR}/scripts/devcontainers.zsh-theme" "${oh_my_install_dir}/custom/themes/devcontainers.zsh-theme"
+#         ln -sf "${oh_my_install_dir}/custom/themes/devcontainers.zsh-theme" "${oh_my_install_dir}/custom/themes/codespaces.zsh-theme"
 
-        # Add devcontainer .zshrc template
-        if [ "$INSTALL_OH_MY_ZSH_CONFIG" = "true" ]; then
-            echo -e "$(cat "${template_path}")\nDISABLE_AUTO_UPDATE=true\nDISABLE_UPDATE_PROMPT=true" > ${user_rc_file}
-            sed -i -e 's/ZSH_THEME=.*/ZSH_THEME="devcontainers"/g' ${user_rc_file}
-        fi
+#         # Add devcontainer .zshrc template
+#         if [ "$INSTALL_OH_MY_ZSH_CONFIG" = "true" ]; then
+#             echo -e "$(cat "${template_path}")\nDISABLE_AUTO_UPDATE=true\nDISABLE_UPDATE_PROMPT=true" > ${user_rc_file}
+#             sed -i -e 's/ZSH_THEME=.*/ZSH_THEME="devcontainers"/g' ${user_rc_file}
+#         fi
 
-        # Copy to non-root user if one is specified
-        if [ "${USERNAME}" != "root" ]; then
-            copy_to_user_files=("${oh_my_install_dir}")
-            [ -f "$user_rc_file" ] && copy_to_user_files+=("$user_rc_file")
-            cp -rf "${copy_to_user_files[@]}" /root
-            chown -R ${USERNAME}:${group_name} "${copy_to_user_files[@]}"
-        fi
-    fi
-fi
+#         # Copy to non-root user if one is specified
+#         if [ "${USERNAME}" != "root" ]; then
+#             copy_to_user_files=("${oh_my_install_dir}")
+#             [ -f "$user_rc_file" ] && copy_to_user_files+=("$user_rc_file")
+#             cp -rf "${copy_to_user_files[@]}" /root
+#             chown -R ${USERNAME}:${group_name} "${copy_to_user_files[@]}"
+#         fi
+#     fi
+# fi
 
 # *********************************
 # ** Ensure config directory **
@@ -543,14 +543,14 @@ fi
 # ****************************
 
 # code shim, it fallbacks to code-insiders if code is not available
-cp -f "${FEATURE_DIR}/bin/code" /usr/local/bin/
-chmod +rx /usr/local/bin/code
+# cp -f "${FEATURE_DIR}/bin/code" /usr/local/bin/
+# chmod +rx /usr/local/bin/code
 
-# systemctl shim for Debian/Ubuntu - tells people to use 'service' if systemd is not running
-if [ "${ADJUSTED_ID}" = "debian" ]; then
-    cp -f "${FEATURE_DIR}/bin/systemctl" /usr/local/bin/systemctl
-    chmod +rx /usr/local/bin/systemctl
-fi
+# # systemctl shim for Debian/Ubuntu - tells people to use 'service' if systemd is not running
+# if [ "${ADJUSTED_ID}" = "debian" ]; then
+#     cp -f "${FEATURE_DIR}/bin/systemctl" /usr/local/bin/systemctl
+#     chmod +rx /usr/local/bin/systemctl
+# fi
 
 # Persist image metadata info, script if meta.env found in same directory
 if [ -f "/usr/local/etc/vscode-dev-containers/meta.env" ] || [ -f "/usr/local/etc/dev-containers/meta.env" ]; then
