@@ -5,7 +5,7 @@
 # For more info, about micromamba, see:
 # <https://github.com/mamba-org/micromamba-docker>.
 
-ARG BASE_IMAGE=mambaorg/micromamba:git-a241157-jammy@sha256:375f53418dab857c40c7a4cf569ea11ea416a23e27fd214f2c6bd2d2072999ca
+ARG BASE_IMAGE=mambaorg/micromamba:2-ubuntu24.04
 
 # The folder to use as a workspace. The project should be mounted here.
 ARG DEV_WORK_DIR=/workspaces
@@ -23,6 +23,9 @@ RUN bash /tmp/main-patched.sh true mambauser && rm /tmp/main-patched.sh
 
 # Install some useful OS packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends --reinstall \
+    # more tools
+    python3 python3-dev python3-pip pipx nano wget curl zip unzip bzip2 python3-virtualenv osc \
+    automake autotools-dev build-essential cmake git openssh-client openssh-server pandoc \
     # more helpful utils like sponge
     moreutils \
     #
